@@ -1,0 +1,32 @@
+# Bandit configuration for AST static security analysis
+# Reference: https://bandit.readthedocs.io/
+
+### Configuration settings
+profiles:
+  pipeline_security:
+    include:
+      - B101 # assert_used
+      - B102 # exec_used
+      - B104 # hardcoded_bind_all_interfaces
+      - B105 # hardcoded_password_string
+      - B106 # hardcoded_password_funcarg
+      - B107 # hardcoded_password_default
+      - B108 # hardcoded_tmp_directory
+      - B301 # pickle
+      - B303 # md5
+      - B307 # eval
+      - B324 # hashlib_insecure_functions
+      - B501 # request_with_no_cert_validation
+      - B602 # subprocess_popen_with_shell_equals_true
+      - B608 # hardcoded_sql_expressions
+
+### Exclude patterns
+exclude_dirs:
+  - "/tests"
+  - "/.cache"
+  - "/dist"
+  - "/build"
+
+### Confidence and Severity thresholds
+skips: []
+tests: []

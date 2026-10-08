@@ -1,0 +1,145 @@
+name: Build, Validate, and Publish Package
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+*'
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target_registry:
+        description: 'Target registry for publication'
+        required: true
+        default: 'pypi'
+        type: choice
+        options:
+          - pypi
+          - testpypi
+          - private-registry
+          - github-packages
+
+permissions:
+  contents: read
+  id-token: write
+  packages: write
+
+jobs:
+  validate-and-security-scan:
+    name: Run Test Suite & Security Audits
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ['3.9', '3.10', '3.11', '3.12']
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: 'pip'
+
+      - name: Install Build, Security, and Testing Dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.lock
+          pip install pytest pytest-cov bandit pip-audit twine build
+
+      - name: Run Static Application Security Testing (Bandit)
+        run: |
+          bandit -r src/ -c .bandit.yml -v
+
+      - name: Run Software Composition Analysis (pip-audit)
+        run: |
+          pip-audit --requirement requirements.lock --strict
+
+      - name: Run API Validation & Dependency Injection Test Suite
+        run: |
+          python run_tests.py
+          pytest tests/ --cov=datapipeline --cov-report=term-missing --cov-fail-under=85
+
+  build-and-publish:
+    name: Build Distributions & Publish to Registry
+    needs: validate-and-security-scan
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v') || github.event_name == 'workflow_dispatch'
+
+    steps:
+      - name: Checkout Source Code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Packaging Tools
+        run: |
+          python -m pip install --upgrade pip build twine
+
+      - name: Build Source Distribution and Pure Wheel
+        run: |
+          python build_dist.py
+          python -m build --sdist --wheel --outdir dist/
+
+      - name: Verify Package Distribution Artifacts
+        run: |
+          twine check dist/*
+
+      - name: Publish to PyPI (Production Release)
+        if: ${{ (github.event.inputs.target_registry == 'pypi' || startsWith(github.ref, 'refs/tags/v')) && github.event.inputs.target_registry != 'testpypi' && github.event.inputs.target_registry != 'private-registry' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.PYPI_API_TOKEN }}
+        run: |
+          twine upload --skip-existing dist/*
+
+      - name: Publish to TestPyPI (Staging Release)
+        if: ${{ github.event.inputs.target_registry == 'testpypi' }}
+        env:
+          TWINE_USERNAME: __token__
+          TWINE_PASSWORD: ${{ secrets.TEST_PYPI_API_TOKEN }}
+        run: |
+          twine upload --repository-url https://test.pypi.org/legacy/ --skip-existing dist/*
+
+      - name: Publish to Private Registry (Internal Artifactory / Nexus)
+        if: ${{ github.event.inputs.target_registry == 'private-registry' }}
+        env:
+          TWINE_REPOSITORY_URL: ${{ secrets.PRIVATE_REGISTRY_URL }}
+          TWINE_USERNAME: ${{ secrets.PRIVATE_REGISTRY_USERNAME }}
+          TWINE_PASSWORD: ${{ secrets.PRIVATE_REGISTRY_PASSWORD }}
+        run: |
+          twine upload --repository-url "$TWINE_REPOSITORY_URL" dist/*
+
+      - name: Publish to GitHub Packages
+        if: ${{ github.event.inputs.target_registry == 'github-packages' }}
+        env:
+          TWINE_REPOSITORY_URL: https://maven.pkg.github.com/${{ github.repository }}
+          TWINE_USERNAME: ${{ github.actor }}
+          TWINE_PASSWORD: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          twine upload --repository-url "$TWINE_REPOSITORY_URL" dist/*
+
+  verify-installation:
+    name: Verify Post-Publication Package Installation
+    needs: build-and-publish
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Set up Clean Python Environment
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install Package from Registry
+        run: |
+          # Verify package is installable and entrypoints resolve
+          pip install secure-data-pipeline --extra-index-url https://test.pypi.org/simple/ || pip install ./dist/*.whl
+
+      - name: Run Installation Verification Test
+        run: |
+          python -c "import datapipeline; print('Installed version:', datapipeline.__version__)"
+          python verify_install.py

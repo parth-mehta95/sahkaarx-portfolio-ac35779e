@@ -1,0 +1,41 @@
+# .pypirc configuration template for PyPI, TestPyPI, and Private Registries
+# Copy this file to ~/.pypirc or configure via environment variables in CI/CD (TWINE_USERNAME, TWINE_PASSWORD)
+
+[distutils]
+index-servers =
+    pypi
+    testpypi
+    private-registry
+    github-packages
+    jfrog-artifactory
+    aws-codeartifact
+
+[pypi]
+repository = https://upload.pypi.org/legacy/
+username = __token__
+password = pypi-AgEIcHlwaS5vcmcCJ... # Production PyPI API Token
+
+[testpypi]
+repository = https://test.pypi.org/legacy/
+username = __token__
+password = pypi-AgENdGVzdC5weXBpLm9yZw... # Staging / TestPyPI Token
+
+[private-registry]
+repository = https://packages.internal.corp.network/repository/pypi-releases/
+username = svc-ci-publisher
+password = ${INTERNAL_REGISTRY_PASSWORD}
+
+[github-packages]
+repository = https://maven.pkg.github.com/organization/secure-data-pipeline
+username = ${GITHUB_ACTOR}
+password = ${GITHUB_TOKEN}
+
+[jfrog-artifactory]
+repository = https://artifactory.internal.company.com/artifactory/api/pypi/pypi-local
+username = deployer
+password = ${ARTIFACTORY_API_KEY}
+
+[aws-codeartifact]
+repository = https://organization-domain-123456789012.d.codeartifact.us-east-1.amazonaws.com/pypi/shared-repo/
+username = aws
+password = ${AWS_CODEARTIFACT_AUTH_TOKEN}

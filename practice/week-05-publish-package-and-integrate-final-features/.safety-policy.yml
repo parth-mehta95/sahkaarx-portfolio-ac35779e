@@ -1,0 +1,20 @@
+# Safety scanner policy configuration file
+# Reference: https://docs.safetycli.com/safety-2/policy-file
+
+version: "3.0"
+
+security:
+  alert-severity-limit: medium
+  fail-on:
+    - cvss-severity: critical
+    - cvss-severity: high
+    - cvss-severity: medium
+
+  deny-known-exploits: true
+
+  unmaintained-packages:
+    alert-after-months-unmaintained: 12
+
+report:
+  format: json
+  output: security_scan_report.json

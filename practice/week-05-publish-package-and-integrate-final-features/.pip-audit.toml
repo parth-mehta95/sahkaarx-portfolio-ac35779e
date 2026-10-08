@@ -1,0 +1,27 @@
+# pip-audit configuration file for dependency vulnerability auditing
+# Reference: https://github.com/pypa/pip-audit
+
+[pip-audit]
+# Vulnerability advisory service (pypi / osv)
+service = "pypi"
+
+# Strict mode: fail on any vulnerability
+strict = true
+
+# Include pre-release checks
+desc = true
+
+# Cache directory for vulnerability feeds
+cache-dir = ".cache/pip-audit"
+
+# Output format
+format = "columns"
+
+# Minimum severity threshold for CI gate failure
+minimum-severity = "LOW"
+
+# Ignore list (empty: zero unmitigated vulnerabilities allowed)
+ignore-vulns = []
+
+# Timeout for API requests to advisory databases
+timeout = 30
