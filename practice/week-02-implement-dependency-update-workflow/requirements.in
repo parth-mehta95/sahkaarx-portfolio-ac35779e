@@ -1,0 +1,13 @@
+# ==============================================================================
+# Direct Application Dependencies with Version Constraints
+# ==============================================================================
+# Pinning strategy:
+#   - Lower bound (>=) guarantees required API features and security fixes.
+#   - Upper bound (<) prevents breaking major changes from untested releases.
+# ==============================================================================
+
+requests>=2.31.0,<3.0.0      # Core HTTP networking library
+urllib3>=2.2.1,<3.0.0        # HTTP client engine with connection pooling
+certifi>=2024.2.2,<2025.0.0  # Curated CA bundle for TLS verification
+charset-normalizer>=3.3.2,<4.0.0 # Fast charset detector
+idna>=3.7,<4.0.0             # Internationalized Domain Names in Applications

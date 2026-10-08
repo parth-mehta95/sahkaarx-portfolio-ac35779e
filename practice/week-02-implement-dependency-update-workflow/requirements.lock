@@ -1,0 +1,10 @@
+# ==============================================================================
+# Locked Dependencies (Exact Pinned Versions)
+# Generated for production determinism and reproducibility.
+# ==============================================================================
+
+requests==2.31.0
+urllib3==2.2.1
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.7
