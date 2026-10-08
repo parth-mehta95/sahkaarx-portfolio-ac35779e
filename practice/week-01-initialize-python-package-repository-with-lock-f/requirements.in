@@ -1,0 +1,10 @@
+# ==============================================================================
+# Direct / Top-Level Application Dependencies
+# Compile into locked dependencies via pip-compile:
+#   pip-compile --generate-hashes --output-file=requirements.lock requirements.in
+# ==============================================================================
+requests==2.31.0
+urllib3==2.2.1
+certifi==2024.2.2
+charset-normalizer==3.3.2
+idna==3.7
